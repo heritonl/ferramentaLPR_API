@@ -1,0 +1,52 @@
+version: '3.8'
+
+# serviços que vou ter na imagem
+services: 
+  api:
+    build: .
+    restart: always
+    container_name: api
+    # command: npm run start
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - ${API_VOLUME}:/src
+    depends_on:
+      - mariadb
+  mariadb:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_TCP_PORT=${DB_PORT}
+    container_name: mariadb
+    restart: always
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - ${DB_VOLUME}:/var/lib/mysql
+    cap_add:
+      - SYS_NICE  # Desabilitar o aviso "mbind: Operation not permitted"
+  frontend:
+    container_name: frontend
+    image: nginx:stable-alpine
+    restart: always
+    volumes:
+      - ../ferramenta-lpr-sistema/src/:/usr/share/nginx/html:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_DEFAULT_PORT}"
+    environment:
+      - NGINX_HOST="${FRONTEND_HOST}"
+      - NGINX_PORT="${FRONTEND_DEFAULT_PORT}"
+    depends_on:
+      - api
+
+  # adminer:
+  #   image: adminer:4
+  #   container_name: adminer_container
+  #   restart: always
+  #   ports:
+  #     - 8080:8080
+   
+    # command: --max_allowed_packet=32505856 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=-03:00
